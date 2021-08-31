@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.SimpleFormatter;
 
@@ -135,7 +136,7 @@ public class TCPClientActivity extends Activity implements View.OnClickListener 
     }
 
     private String formatDateTime(long time) {
-        return new SimpleFormatter("(HH:mm:ss)").format(new Date(time));
+        return new SimpleDateFormat("HH:mm:ss").format(new Date(time));
 
     }
 }

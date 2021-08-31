@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -14,8 +15,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -71,16 +74,36 @@ public class TCPClientActivity extends Activity implements View.OnClickListener 
     }
 
     private void connectTCPServer() {
-        Socket socket = null ;
-        while (socket ==null){
-            try{
-                socket = new Socket("localhost",8688);
+        Socket socket = null;
+        while (socket == null) {
+            try {
+                socket = new Socket("localhost", 8688);
                 mClientSocket = socket;
-                mPrintWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())),true);
-                mHandler.sendEmptyMessage(MESSAGE_SOCKET_CONNECTED)
-            }catch (Exception e){
-
+                mPrintWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                mHandler.sendEmptyMessage(MESSAGE_SOCKET_CONNECTED);
+                System.out.println("connect server success");
+            } catch (Exception e) {
+                SystemClock.sleep(1000);
+                System.out.println("connect tcp server failed,retry...");
             }
+        }
+        try {
+            //接受服务器端的消息
+            BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            while (!TCPClientActivity.this.isFinishing()) {
+                String msg = br.readLine();
+                System.out.println("receive : " + msg);
+                if (msg != null) {
+                    String time =formatDateTime(System.currentTimeMillis());
+                    final String showedMsg = "server "+time+":"+msg+"\n";
+                    mHandler.obtainMessage(MESSAGE_RECEIVE_NEW_MSG,showedMsg).sendToTarget();
+                }
+            }
+            System.out.println("quit...");
+            MyUtils.close(mPrintWriter);
+            MyUtils.close(br);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -111,7 +134,7 @@ public class TCPClientActivity extends Activity implements View.OnClickListener 
         }
     }
 
-    private  String formatDateTime(long time){
+    private String formatDateTime(long time) {
         return new SimpleFormatter("(HH:mm:ss)").format(new Date(time));
 
     }
